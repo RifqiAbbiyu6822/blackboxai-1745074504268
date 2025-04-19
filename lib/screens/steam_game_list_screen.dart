@@ -48,17 +48,24 @@ class _SteamGameListScreenState extends State<SteamGameListScreen> {
   }
 
   void _fetchGames() async {
-    final games = await _apiService.fetchSteamGames();
-    setState(() {
-      _games = games;
-    });
-    // Initialize video controllers for trailers if available
-    for (var game in games) {
-      if (game.trailerUrl.isNotEmpty) {
-        final controller = VideoPlayerController.network(game.trailerUrl);
-        await controller.initialize();
-        _videoControllers[game.appId] = controller;
+    try {
+      final games = await _apiService.fetchSteamGames();
+      setState(() {
+        _games = games;
+      });
+      // Initialize video controllers for trailers if available
+      for (var game in games) {
+        if (game.trailerUrl.isNotEmpty) {
+          final controller = VideoPlayerController.network(game.trailerUrl);
+          await controller.initialize();
+          _videoControllers[game.appId] = controller;
+        }
       }
+    } catch (e) {
+      print('Error fetching or initializing games: \$e');
+      setState(() {
+        _games = [];
+      });
     }
   }
 
@@ -70,7 +77,9 @@ class _SteamGameListScreenState extends State<SteamGameListScreen> {
         _favoriteAppIds.add(appId);
       }
     });
-    _saveFavorites();
+    _saveFavorites().catchError((e) {
+      print('Error saving favorites: \$e');
+    });
   }
 
   @override
